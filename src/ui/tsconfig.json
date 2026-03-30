@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "composite": true,
+    "rootDir": "..",
+    "outDir": "../../dist-tsc/ui"
+  },
+  "include": ["./**/*.ts", "./**/*.tsx", "../shared/**/*.ts"]
+}
