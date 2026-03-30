@@ -6,40 +6,16 @@ interface Props {
   defaultDensity: DensityLevel;
   onSubmit: (text: string, focusQuery: string, density: DensityLevel) => void;
   onOpenSettings: () => void;
+  savedMap: boolean;
+  onRestoreMap: () => void;
 }
 
 const DENSITY_OPTIONS: DensityLevel[] = ['sparse', 'standard', 'dense', 'exhaustive'];
 
-export function InputScreen({ defaultDensity, onSubmit, onOpenSettings }: Props) {
-  const [inputMode, setInputMode] = useState<'text' | 'url'>('text');
+export function InputScreen({ defaultDensity, onSubmit, onOpenSettings, savedMap, onRestoreMap }: Props) {
   const [text, setText] = useState('');
-  const [url, setUrl] = useState('');
   const [focusQuery, setFocusQuery] = useState('');
   const [density, setDensity] = useState<DensityLevel>(defaultDensity);
-  const [fetching, setFetching] = useState(false);
-  const [fetchError, setFetchError] = useState('');
-
-  const handleUrlFetch = async () => {
-    if (!url) return;
-    setFetching(true);
-    setFetchError('');
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      doc.querySelectorAll('script, style, nav, footer, header, aside, [role="navigation"]').forEach((el) => el.remove());
-      const articleText = (doc.body?.innerText || '').trim();
-      if (!articleText) throw new Error('No text content found');
-      setText(articleText);
-      setInputMode('text');
-    } catch (err) {
-      setFetchError(
-        err instanceof Error ? err.message : 'Failed to fetch URL. Try pasting the text directly.'
-      );
-    }
-    setFetching(false);
-  };
 
   const handleSubmit = () => {
     if (!text.trim()) return;
@@ -60,51 +36,13 @@ export function InputScreen({ defaultDensity, onSubmit, onOpenSettings }: Props)
         </button>
       </div>
 
-      <div className="tab-group">
-        <button
-          className={`tab ${inputMode === 'text' ? 'active' : ''}`}
-          onClick={() => setInputMode('text')}
-        >
-          Paste Text
-        </button>
-        <button
-          className={`tab ${inputMode === 'url' ? 'active' : ''}`}
-          onClick={() => setInputMode('url')}
-        >
-          URL
-        </button>
-      </div>
-
-      {inputMode === 'text' ? (
-        <textarea
-          className="textarea"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Paste your article text here..."
-          rows={10}
-        />
-      ) : (
-        <div className="url-input-group">
-          <input
-            type="url"
-            className="input"
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setFetchError('');
-            }}
-            placeholder="https://example.com/article"
-          />
-          <button
-            className="btn-secondary"
-            onClick={handleUrlFetch}
-            disabled={!url || fetching}
-          >
-            {fetching ? 'Fetching...' : 'Fetch'}
-          </button>
-          {fetchError && <span className="hint error">{fetchError}</span>}
-        </div>
-      )}
+      <textarea
+        className="textarea"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Paste your article text here..."
+        rows={10}
+      />
 
       {text && (
         <div className="hint">{wordCount} words</div>
@@ -144,6 +82,12 @@ export function InputScreen({ defaultDensity, onSubmit, onOpenSettings }: Props)
       >
         Extract Concepts
       </button>
+
+      {savedMap && (
+        <button className="btn-secondary full-width" onClick={onRestoreMap}>
+          Restore previous map
+        </button>
+      )}
     </div>
   );
 }

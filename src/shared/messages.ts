@@ -1,4 +1,4 @@
-import type { ConceptNode, ConceptEdge, LayoutType, PluginSettings } from './types';
+import type { ConceptMap, ConceptNode, ConceptEdge, LayoutType, PluginSettings } from './types';
 
 // --- UI -> Plugin messages ---
 export type UIToPluginMessage =
@@ -6,7 +6,9 @@ export type UIToPluginMessage =
   | { type: 'get-settings' }
   | { type: 'save-settings'; payload: PluginSettings }
   | { type: 'save-feedback'; payload: FeedbackPayload }
-  | { type: 'resize-ui'; payload: { width: number; height: number } };
+  | { type: 'resize-ui'; payload: { width: number; height: number } }
+  | { type: 'save-map'; payload: ConceptMap }
+  | { type: 'load-map' };
 
 export interface GenerateMapPayload {
   nodes: (ConceptNode & { x: number; y: number })[];
@@ -24,4 +26,5 @@ export interface FeedbackPayload {
 // --- Plugin -> UI messages ---
 export type PluginToUIMessage =
   | { type: 'settings-loaded'; payload: PluginSettings | null }
-  | { type: 'map-generated'; payload: { success: boolean; nodeCount: number; edgeCount: number; error?: string } };
+  | { type: 'map-generated'; payload: { success: boolean; nodeCount: number; edgeCount: number; error?: string } }
+  | { type: 'map-loaded'; payload: ConceptMap | null };

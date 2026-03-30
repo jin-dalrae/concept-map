@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type {
   ConceptMap,
   ConceptNode,
@@ -29,8 +29,34 @@ export function ReviewPanel({
   const [layout, setLayout] = useState<LayoutType>(defaultLayout);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');
+  const [search, setSearch] = useState('');
 
   const pendingSuggestions = mergeSuggestions.filter((s) => s.accepted === null);
+
+  // Filter nodes and edges by search query
+  const searchLower = search.toLowerCase().trim();
+
+  const filteredNodes = useMemo(() => {
+    if (!searchLower) return conceptMap.nodes;
+    return conceptMap.nodes.filter((n) =>
+      n.label.toLowerCase().includes(searchLower)
+    );
+  }, [conceptMap.nodes, searchLower]);
+
+  const filteredNodeIds = useMemo(
+    () => new Set(filteredNodes.map((n) => n.id)),
+    [filteredNodes]
+  );
+
+  const filteredEdges = useMemo(() => {
+    if (!searchLower) return conceptMap.edges;
+    return conceptMap.edges.filter(
+      (e) =>
+        filteredNodeIds.has(e.sourceId) ||
+        filteredNodeIds.has(e.targetId) ||
+        e.label.toLowerCase().includes(searchLower)
+    );
+  }, [conceptMap.edges, searchLower, filteredNodeIds]);
 
   // --- Node editing ---
   const startEdit = (node: ConceptNode) => {
@@ -149,11 +175,28 @@ export function ReviewPanel({
         </div>
       )}
 
+      {/* Search filter — only show when there are 10+ nodes */}
+      {conceptMap.nodes.length >= 10 && (
+        <input
+          className="input input-sm"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Filter concepts..."
+        />
+      )}
+
       {/* Nodes */}
       <div className="section">
-        <h3>Concepts</h3>
+        <h3>
+          Concepts
+          {searchLower && (
+            <span className="filter-count">
+              {' '}({filteredNodes.length} of {conceptMap.nodes.length})
+            </span>
+          )}
+        </h3>
         <div className="node-list">
-          {conceptMap.nodes.map((node) => (
+          {filteredNodes.map((node) => (
             <div key={node.id} className="node-item">
               {editingNodeId === node.id ? (
                 <div className="node-edit-row">
@@ -199,9 +242,16 @@ export function ReviewPanel({
 
       {/* Edges */}
       <div className="section">
-        <h3>Connections</h3>
+        <h3>
+          Connections
+          {searchLower && (
+            <span className="filter-count">
+              {' '}({filteredEdges.length} of {conceptMap.edges.length})
+            </span>
+          )}
+        </h3>
         <div className="edge-list">
-          {conceptMap.edges.map((edge) => (
+          {filteredEdges.map((edge) => (
             <div key={edge.id} className="edge-item">
               <span className="edge-from">{getNodeLabel(edge.sourceId)}</span>
               <span className="edge-label">{edge.label}</span>

@@ -20,12 +20,12 @@
 Paste article → AI finds seed nouns → Sentences are matched → Relationships are extracted → Network expands → Generate on board
 ```
 
-1. **Paste** your article text or fetch from a URL
+1. **Paste** your article text
 2. **AI identifies** key seed nouns from a summary of the article
-3. **Sentences are matched** — the plugin finds sentences containing each noun (no AI needed)
+3. **Sentences are matched** — finds sentences containing each noun using fuzzy stem matching (no AI needed)
 4. **Relationships are extracted** — AI reads those sentences and pulls out subject-verb-object triples
 5. **Network expands** — newly discovered nouns become the next frontier, repeating steps 3-4 (breadth-first)
-6. **Review** the extraction: edit labels, delete nodes, merge duplicates
+6. **Review** the extraction: search, edit labels, delete nodes, merge duplicates
 7. **Generate** — text boxes + connectors appear on your FigJam board
 8. **Rearrange** — switch layout and regenerate without re-extracting
 
@@ -37,7 +37,7 @@ ConceptMap uses a **breadth-first, sentence-grounded** extraction approach:
 
 1. **Seed extraction** — AI reads the article and returns 6-10 core noun phrases
 2. **Sentence splitting** — the article is split into sentences (pure text processing, no AI)
-3. **Sentence matching** — sentences containing each frontier concept are collected
+3. **Fuzzy sentence matching** — sentences containing each frontier concept are collected using stem-based matching ("economy" also matches "economic", "economically", etc.)
 4. **Relationship extraction** — AI reads the matched sentences and extracts subject-verb-object relationships plus any new nouns discovered
 5. **BFS expansion** — new nouns become the next frontier; steps 3-4 repeat
 
@@ -58,10 +58,12 @@ ConceptMap uses a **breadth-first, sentence-grounded** extraction approach:
 | **Multi-provider AI** | Bring your own key — supports Claude (Anthropic) and Gemini (Google) |
 | **4 density levels** | Control BFS expansion depth: 3, 5, 10, or 15 levels |
 | **Focus query** | Bias extraction toward a specific topic, e.g. *"systemic barriers"* |
+| **Fuzzy matching** | Stem-based sentence matching — "economy" catches "economic", "economically", etc. |
 | **Smart dedup** | Auto-merge duplicates via lemmatization + AI canonicalization + string similarity |
-| **Review panel** | Edit every node label, delete nodes/edges, accept or reject merge suggestions |
+| **Review panel** | Search/filter, edit labels, delete nodes/edges, accept or reject merge suggestions |
 | **3 layout algorithms** | Radial (default), Hierarchical (top-down tree), Cluster (grouped by type) |
 | **Rearrange after generation** | Switch layout and regenerate without running extraction again |
+| **Map persistence** | Last extraction is auto-saved; restore it when reopening the plugin |
 | **Citation tracking** | Every relationship carries the source sentence from the article |
 | **Native FigJam elements** | Rounded text boxes + connectors — fully editable after generation |
 

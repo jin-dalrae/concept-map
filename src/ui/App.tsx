@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { LayoutType, DensityLevel } from '../shared/types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { ConceptMap, LayoutType, DensityLevel } from '../shared/types';
 import type { PluginToUIMessage, UIToPluginMessage } from '../shared/messages';
 import { useSettings } from './hooks/useSettings';
 import { useExtraction } from './hooks/useExtraction';
@@ -21,6 +21,7 @@ export function App() {
     edgeCount: 0,
   });
   const [error, setError] = useState<string | null>(null);
+  const [hasSavedMap, setHasSavedMap] = useState(false);
 
   // Show settings if no API key configured
   useEffect(() => {
@@ -28,6 +29,11 @@ export function App() {
       setScreen('settings');
     }
   }, [loaded, settings]);
+
+  // Request saved map check on startup
+  useEffect(() => {
+    postToPlugin({ type: 'load-map' });
+  }, []);
 
   // Listen for plugin responses
   useEffect(() => {
@@ -47,10 +53,30 @@ export function App() {
           setScreen('review');
         }
       }
+
+      if (msg.type === 'map-loaded') {
+        setHasSavedMap(msg.payload !== null);
+        // Store it so we can restore later
+        if (msg.payload) {
+          savedMapRef.current = msg.payload;
+        }
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, []);
+
+  // Ref to hold the saved map data (avoids re-renders)
+  const savedMapRef = useRef<ConceptMap | null>(null);
+
+  // Save map to storage whenever extraction produces a new map
+  useEffect(() => {
+    if (extraction.map) {
+      postToPlugin({ type: 'save-map', payload: extraction.map });
+      setHasSavedMap(true);
+      savedMapRef.current = extraction.map;
+    }
+  }, [extraction.map]);
 
   // Watch extraction state
   useEffect(() => {
@@ -71,6 +97,14 @@ export function App() {
   const handleExtract = (text: string, focusQuery: string, density: DensityLevel) => {
     setError(null);
     extraction.extract({ text, focusQuery: focusQuery || undefined, density });
+  };
+
+  const handleRestoreMap = () => {
+    if (savedMapRef.current) {
+      extraction.updateMap(savedMapRef.current);
+      extraction.updateSuggestions([]);
+      setScreen('review');
+    }
   };
 
   const handleGenerate = (layout: LayoutType) => {
@@ -135,6 +169,8 @@ export function App() {
           defaultDensity={settings?.density ?? 'dense'}
           onSubmit={handleExtract}
           onOpenSettings={() => setScreen('settings')}
+          savedMap={hasSavedMap}
+          onRestoreMap={handleRestoreMap}
         />
       )}
 

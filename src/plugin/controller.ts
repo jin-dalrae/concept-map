@@ -1,9 +1,10 @@
 import type { UIToPluginMessage, PluginToUIMessage } from '../shared/messages';
-import type { PluginSettings } from '../shared/types';
+import type { PluginSettings, ConceptMap } from '../shared/types';
 import { createMapOnBoard } from './board';
 
 const STORAGE_KEY_SETTINGS = 'concept-map-settings';
 const STORAGE_KEY_FEEDBACK = 'concept-map-feedback';
+const STORAGE_KEY_MAP = 'concept-map-saved-map';
 
 figma.showUI(__html__, {
   width: 420,
@@ -78,6 +79,18 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
 
     case 'resize-ui': {
       figma.ui.resize(msg.payload.width, msg.payload.height);
+      break;
+    }
+
+    case 'save-map': {
+      await figma.clientStorage.setAsync(STORAGE_KEY_MAP, msg.payload);
+      break;
+    }
+
+    case 'load-map': {
+      const saved = (await figma.clientStorage.getAsync(STORAGE_KEY_MAP)) as ConceptMap | undefined;
+      const reply: PluginToUIMessage = { type: 'map-loaded', payload: saved ?? null };
+      figma.ui.postMessage(reply);
       break;
     }
   }
