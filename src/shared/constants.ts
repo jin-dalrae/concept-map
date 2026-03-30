@@ -8,29 +8,45 @@ export const NODE_COLORS: Record<ConceptNodeType, { r: number; g: number; b: num
   outcome: { r: 0.56, g: 0.93, b: 0.56 },   // Green
 };
 
-// How many nodes to extract per density level
+// BFS expansion depth per density level
+export const DENSITY_DEPTH: Record<DensityLevel, number> = {
+  sparse: 3,
+  standard: 5,
+  dense: 10,
+  exhaustive: 15,
+};
+
+// Legacy: still used by the old single-shot extraction prompt (kept for compatibility)
 export const DENSITY_RANGES: Record<DensityLevel, { min: number; max: number }> = {
-  sparse:     { min: 5, max: 8 },
-  standard:   { min: 10, max: 16 },
-  dense:      { min: 20, max: 30 },
-  exhaustive: { min: 35, max: 60 },
+  sparse:     { min: 10, max: 15 },
+  standard:   { min: 16, max: 25 },
+  dense:      { min: 25, max: 40 },
+  exhaustive: { min: 40, max: 80 },
 };
 
 // Display labels for density options
 export const DENSITY_LABELS: Record<DensityLevel, string> = {
-  sparse: 'Sparse',
+  sparse: 'Core',
   standard: 'Standard',
-  dense: 'Dense',
-  exhaustive: 'All',
+  dense: 'Deep',
+  exhaustive: 'Full',
 };
 
-// Layout spacing defaults (in pixels, matching FigJam sticky default ~200px)
+// Subtitle descriptions for each density level
+export const DENSITY_DESCRIPTIONS: Record<DensityLevel, string> = {
+  sparse: '3 levels',
+  standard: '5 levels',
+  dense: '10 levels',
+  exhaustive: '15 levels',
+};
+
+// Layout spacing defaults (in pixels, matching text box dimensions)
 export const LAYOUT_DEFAULTS = {
-  stickyWidth: 200,
-  stickyHeight: 200,
-  hierarchical: { rankSep: 160, nodeSep: 100 },
-  radial: { ringGap: 280 },
-  cluster: { clusterGap: 350, intraClusterGap: 40 },
+  stickyWidth: 160,
+  stickyHeight: 48,
+  hierarchical: { rankSep: 120, nodeSep: 80 },
+  radial: { ringGap: 200 },
+  cluster: { clusterGap: 280, intraClusterGap: 30 },
 };
 
 export const SECTION_PADDING = 100;

@@ -7,6 +7,8 @@ export interface LLMClient {
   extractConceptMap(request: ExtractionRequest): Promise<ExtractionResult>;
   canonicalizeLabels(labels: string[]): Promise<Map<string, string>>;
   validateKey(): Promise<boolean>;
+  /** Generic JSON generation — send system+user prompts, get parsed JSON back */
+  generateJSON(systemPrompt: string, userPrompt: string, maxTokens?: number): Promise<any>;
 }
 
 export interface LLMClientConfig {

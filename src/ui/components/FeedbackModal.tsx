@@ -5,6 +5,7 @@ interface Props {
   edgeCount: number;
   onSubmit: (feedback: { useful: boolean; issues: string[]; comment?: string }) => void;
   onDismiss: () => void;
+  onRearrange: () => void;
 }
 
 const ISSUE_OPTIONS = [
@@ -14,7 +15,7 @@ const ISSUE_OPTIONS = [
   'Labels don\'t make sense',
 ];
 
-export function FeedbackModal({ nodeCount, edgeCount, onSubmit, onDismiss }: Props) {
+export function FeedbackModal({ nodeCount, edgeCount, onSubmit, onDismiss, onRearrange }: Props) {
   const [useful, setUseful] = useState<boolean | null>(null);
   const [issues, setIssues] = useState<string[]>([]);
 
@@ -77,6 +78,10 @@ export function FeedbackModal({ nodeCount, edgeCount, onSubmit, onDismiss }: Pro
           </div>
         </div>
       )}
+
+      <button className="btn-secondary full-width" onClick={onRearrange}>
+        Rearrange with different layout
+      </button>
 
       <div className="button-row">
         <button className="btn-secondary" onClick={onDismiss}>

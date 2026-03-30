@@ -6,7 +6,6 @@ import type {
   MergeSuggestion,
   LayoutType,
 } from '../../shared/types';
-import { NODE_COLORS } from '../../shared/constants';
 
 interface Props {
   conceptMap: ConceptMap;
@@ -99,13 +98,6 @@ export function ReviewPanel({
   const getNodeLabel = (id: string) =>
     conceptMap.nodes.find((n) => n.id === id)?.label ?? id;
 
-  const colorStyle = (type: string) => {
-    const c = NODE_COLORS[type as keyof typeof NODE_COLORS] ?? NODE_COLORS.concept;
-    return {
-      backgroundColor: `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`,
-    };
-  };
-
   return (
     <div className="panel review-panel">
       <div className="panel-header">
@@ -163,7 +155,6 @@ export function ReviewPanel({
         <div className="node-list">
           {conceptMap.nodes.map((node) => (
             <div key={node.id} className="node-item">
-              <span className="node-type-dot" style={colorStyle(node.type)} />
               {editingNodeId === node.id ? (
                 <div className="node-edit-row">
                   <input
@@ -192,7 +183,6 @@ export function ReviewPanel({
                   >
                     {node.label}
                   </span>
-                  <span className="node-type-tag">{node.type}</span>
                   <button
                     className="btn-icon btn-delete"
                     onClick={() => deleteNode(node.id)}

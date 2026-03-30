@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { DensityLevel } from '../../shared/types';
-import { DENSITY_RANGES, DENSITY_LABELS } from '../../shared/constants';
+import { DENSITY_LABELS, DENSITY_DESCRIPTIONS } from '../../shared/constants';
 
 interface Props {
   defaultDensity: DensityLevel;
@@ -131,7 +131,7 @@ export function InputScreen({ defaultDensity, onSubmit, onOpenSettings }: Props)
               onClick={() => setDensity(d)}
             >
               <span className="toggle-label">{DENSITY_LABELS[d]}</span>
-              <span className="toggle-sub">{DENSITY_RANGES[d].min}-{DENSITY_RANGES[d].max}</span>
+              <span className="toggle-sub">{DENSITY_DESCRIPTIONS[d]}</span>
             </button>
           ))}
         </div>

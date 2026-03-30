@@ -4,6 +4,8 @@
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/index.html",
+  "containsWidget": true,
+  "widgetApi": "1.0.0",
   "editorType": [
     "figjam"
   ],

@@ -25,7 +25,7 @@ export function layoutRadial(
   const centerNode = sorted[0];
   const outerNodes = sorted.slice(1);
   const ringGap = LAYOUT_DEFAULTS.radial.ringGap;
-  const nodesPerRing = 8;
+  const nodesPerRing = 10;
 
   const result: (ConceptNode & { x: number; y: number })[] = [
     { ...centerNode, x: 0, y: 0 },

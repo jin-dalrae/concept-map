@@ -39,6 +39,69 @@ Output ONLY valid JSON matching this exact schema (no markdown fences, no extra 
   return { systemPrompt, userPrompt };
 }
 
+// ────────────────────────────────────────────────
+// Breadth-first expansion prompts
+// ────────────────────────────────────────────────
+
+/**
+ * Step 1: Extract seed concepts from article summary.
+ */
+export function buildSeedPrompt(focusQuery?: string): string {
+  const focusClause = focusQuery
+    ? `\nPay special attention to concepts related to: "${focusQuery}".`
+    : '';
+
+  return `You are a concept extraction engine. Given an article, you:
+1. Write a concise 2-sentence summary.
+2. Write a concise title (3-6 words).
+3. Identify the 6-10 most important nouns or noun phrases (proper names, technical terms, key subjects) that represent the core concepts of the article.${focusClause}
+
+Rules for seed concepts:
+- Each seed must be a specific noun or noun phrase (1-4 words)
+- Use canonical singular form (e.g. "policy" not "policies")
+- Include proper names, organizations, and key actors
+- Include core processes and outcomes mentioned
+- Assign each seed a type: concept, actor, process, or outcome
+
+Output ONLY valid JSON (no markdown fences, no extra text):
+{
+  "title": "string",
+  "summary": "string",
+  "seeds": [{ "label": "string", "type": "concept|actor|process|outcome" }]
+}`;
+}
+
+/**
+ * Step 2: Extract relationships from sentences about a set of focus concepts.
+ */
+export function buildRelationshipPrompt(): string {
+  return `You are a relationship extraction engine. Given a set of focus concepts and sentences from an article containing those concepts, extract all subject-verb-object relationships.
+
+Rules:
+- Each relationship must be grounded in the given sentences
+- Source and target should be concise noun phrases (1-4 words)
+- Relationship label is an active-voice verb phrase (1-3 words), e.g. "enables", "causes", "funds", "opposes"
+- Assign each noun a type: concept, actor, process, or outcome
+- Do NOT duplicate relationships. If the same source→target pair appears, keep the most informative verb.
+- Include ALL relationships you can find — be thorough
+- The "newConcepts" array lists important nouns found in these sentences that were NOT in the focus concepts list.
+
+Output ONLY valid JSON (no markdown fences, no extra text):
+{
+  "relationships": [
+    {
+      "source": "string",
+      "target": "string",
+      "label": "string",
+      "sourceType": "concept|actor|process|outcome",
+      "targetType": "concept|actor|process|outcome",
+      "sentence": "string"
+    }
+  ],
+  "newConcepts": [{ "label": "string", "type": "concept|actor|process|outcome" }]
+}`;
+}
+
 export function buildCanonicalizationPrompt(labels: string[]): string {
   return `Given these concept labels extracted from an article, identify any that refer to the same concept (synonyms, abbreviations, singular/plural forms, paraphrases) and map them to a single canonical label.
 

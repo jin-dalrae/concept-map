@@ -232,6 +232,10 @@ body {
   justify-content: flex-end;
 }
 
+.full-width {
+  width: 100%;
+}
+
 /* === Toggle Group === */
 .toggle-group {
   display: flex;

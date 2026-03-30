@@ -12,34 +12,58 @@
 
 ---
 
-**ConceptMap** is a FigJam plugin that turns articles, research papers, and long-form text into structured, color-coded concept maps — directly on your board. Powered by your own AI API key (Claude or Gemini).
+**ConceptMap** is a FigJam plugin that turns articles, research papers, and long-form text into structured concept maps — directly on your board. Powered by your own AI API key (Claude or Gemini).
 
 ## How It Works
 
 ```
-Paste article → AI extracts concepts → Review & edit → Generate on board
+Paste article → AI finds seed nouns → Sentences are matched → Relationships are extracted → Network expands → Generate on board
 ```
 
 1. **Paste** your article text or fetch from a URL
-2. **AI extracts** key concepts, actors, processes, and outcomes — plus their relationships
-3. **Review** the extraction: edit labels, delete nodes, merge duplicates
-4. **Generate** — sticky notes + connectors appear on your FigJam board, ready to rearrange
+2. **AI identifies** key seed nouns from a summary of the article
+3. **Sentences are matched** — the plugin finds sentences containing each noun (no AI needed)
+4. **Relationships are extracted** — AI reads those sentences and pulls out subject-verb-object triples
+5. **Network expands** — newly discovered nouns become the next frontier, repeating steps 3-4 (breadth-first)
+6. **Review** the extraction: edit labels, delete nodes, merge duplicates
+7. **Generate** — text boxes + connectors appear on your FigJam board
+8. **Rearrange** — switch layout and regenerate without re-extracting
 
 Everything placed on the board is native FigJam elements. Move them, recolor them, add your own — it's your board.
+
+## Extraction Pipeline
+
+ConceptMap uses a **breadth-first, sentence-grounded** extraction approach:
+
+1. **Seed extraction** — AI reads the article and returns 6-10 core noun phrases
+2. **Sentence splitting** — the article is split into sentences (pure text processing, no AI)
+3. **Sentence matching** — sentences containing each frontier concept are collected
+4. **Relationship extraction** — AI reads the matched sentences and extracts subject-verb-object relationships plus any new nouns discovered
+5. **BFS expansion** — new nouns become the next frontier; steps 3-4 repeat
+
+**Density controls how deep the expansion goes:**
+
+| Level | BFS Depth | Description |
+|---|---|---|
+| Core | 3 levels | Key ideas only |
+| Standard | 5 levels | Balanced coverage |
+| Deep | 10 levels | Thorough exploration |
+| Full | 15 levels | Exhaustive — captures nearly everything |
 
 ## Features
 
 | Feature | Description |
 |---|---|
+| **Breadth-first extraction** | Sentence-grounded concept discovery that expands outward from seed nouns |
 | **Multi-provider AI** | Bring your own key — supports Claude (Anthropic) and Gemini (Google) |
-| **4 density levels** | Sparse (5-8), Standard (10-16), Dense (20-30), or All (35-60 nodes) |
+| **4 density levels** | Control BFS expansion depth: 3, 5, 10, or 15 levels |
 | **Focus query** | Bias extraction toward a specific topic, e.g. *"systemic barriers"* |
-| **Smart dedup** | 3-stage duplicate detection: lemmatization, AI canonicalization, string similarity |
+| **Smart dedup** | Auto-merge duplicates via lemmatization + AI canonicalization + string similarity |
 | **Review panel** | Edit every node label, delete nodes/edges, accept or reject merge suggestions |
 | **3 layout algorithms** | Radial (default), Hierarchical (top-down tree), Cluster (grouped by type) |
-| **Color-coded types** | Yellow = concept, Purple = actor, Blue = process, Green = outcome |
-| **Citation tracking** | Every node carries a source quote from the original text |
-| **Native FigJam elements** | Sticky notes + connectors — fully editable after generation |
+| **Rearrange after generation** | Switch layout and regenerate without running extraction again |
+| **Citation tracking** | Every relationship carries the source sentence from the article |
+| **Native FigJam elements** | Rounded text boxes + connectors — fully editable after generation |
 
 ## Getting Started
 
@@ -47,7 +71,7 @@ Everything placed on the board is native FigJam elements. Move them, recolor the
 
 1. Clone this repo and install dependencies:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/jin-dalrae/concept-map.git
    cd concept-map
    npm install
    npm run build
@@ -87,15 +111,18 @@ npm run typecheck
 ```
 src/
 ├── shared/           # Types, constants shared between plugin + UI
-├── plugin/           # FigJam sandbox (creates stickies, connectors, sections)
+├── plugin/           # FigJam sandbox (creates text boxes, connectors, sections)
 │   ├── controller.ts # Entry point, message handler
 │   └── board.ts      # FigJam element creation
 └── ui/               # React UI (runs in iframe)
     ├── api/          # LLM provider abstraction (Claude + Gemini)
+    │   ├── prompts.ts # Seed extraction + relationship extraction prompts
+    │   └── ...
     ├── components/   # Input, Review, Settings, Loading, Feedback screens
-    ├── dedup/        # 3-stage duplicate detection pipeline
-    ├── hooks/        # useExtraction, useSettings
+    ├── dedup/        # Duplicate detection pipeline
+    ├── hooks/        # useExtraction (BFS pipeline), useSettings
     ├── layout/       # Radial, hierarchical, cluster algorithms
+    ├── text/         # Sentence splitting + concept-sentence matching
     └── styles/       # CSS
 ```
 
@@ -103,15 +130,42 @@ src/
 
 The plugin uses FigJam's dual-thread model:
 
-- **Plugin sandbox** (`dist/code.js`) — Has FigJam API access. Creates sticky notes, connectors, and sections. Persists settings via `figma.clientStorage`.
-- **UI iframe** (`dist/index.html`) — React app. Handles all user interaction, AI API calls, layout computation. Communicates with the sandbox via `postMessage`.
+- **Plugin sandbox** (`dist/code.js`) — Has FigJam API access. Creates rounded text boxes, connectors, and sections. Persists settings via `figma.clientStorage`.
+- **UI iframe** (`dist/index.html`) — React app. Handles all user interaction, AI API calls, BFS extraction, layout computation. Communicates with the sandbox via `postMessage`.
+
+### Extraction Flow
+
+```
+                      ┌──────────────┐
+                      │  Article Text │
+                      └──────┬───────┘
+                             │
+                    ┌────────▼────────┐
+                    │  AI: Seed Nouns  │  (6-10 core concepts)
+                    └────────┬────────┘
+                             │
+                  ┌──────────▼──────────┐
+               ┌──│   BFS Expansion     │──┐
+               │  │   Loop (N levels)   │  │
+               │  └─────────────────────┘  │
+               │                           │
+    ┌──────────▼──────────┐   ┌────────────▼───────────┐
+    │ Match sentences to  │   │ AI: Extract relations   │
+    │ frontier concepts   │──▶│ + discover new nouns    │
+    │ (no AI needed)      │   │                         │
+    └─────────────────────┘   └────────────┬───────────┘
+                                           │
+                              ┌─────────────▼────────────┐
+                              │  New nouns → next frontier │
+                              └──────────────────────────┘
+```
 
 ## Tech Stack
 
 - **React 18** — UI framework
 - **TypeScript** — Type safety across both threads
 - **Vite** — UI bundler (single-file output for FigJam)
-- **esbuild** — Plugin sandbox bundler
+- **esbuild** — Plugin sandbox bundler (ES2015 target)
 - **dagre** — Hierarchical graph layout
 - **Custom algorithms** — Radial and cluster layouts
 

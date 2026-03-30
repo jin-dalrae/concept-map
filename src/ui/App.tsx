@@ -132,7 +132,7 @@ export function App() {
 
       {screen === 'input' && (
         <InputScreen
-          defaultDensity={settings?.density ?? 'standard'}
+          defaultDensity={settings?.density ?? 'dense'}
           onSubmit={handleExtract}
           onOpenSettings={() => setScreen('settings')}
         />
@@ -163,6 +163,7 @@ export function App() {
           edgeCount={genResult.edgeCount}
           onSubmit={handleFeedbackSubmit}
           onDismiss={() => setScreen('input')}
+          onRearrange={() => setScreen('review')}
         />
       )}
     </div>

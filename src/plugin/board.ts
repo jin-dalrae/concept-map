@@ -1,14 +1,21 @@
 import type { GenerateMapPayload } from '../shared/messages';
 import type { ConceptNode } from '../shared/types';
-import { NODE_COLORS, SECTION_PADDING } from '../shared/constants';
+import { SECTION_PADDING } from '../shared/constants';
+
+// Single neutral color for all nodes (light blue-gray)
+const NODE_COLOR = { r: 0.93, g: 0.95, b: 0.98 };
 
 const FONT: FontName = { family: 'Inter', style: 'Medium' };
 const FONT_REGULAR: FontName = { family: 'Inter', style: 'Regular' };
 
+const NODE_MIN_WIDTH = 160;
+const NODE_HEIGHT = 48;
+const TITLE_OFFSET_Y = 80; // space below section title so nodes don't overlap it
+
 export async function createMapOnBoard(payload: GenerateMapPayload): Promise<void> {
   const { nodes, edges, title } = payload;
 
-  // Load fonts needed for sticky notes and connector labels
+  // Load fonts needed for text boxes and connector labels
   await Promise.all([
     figma.loadFontAsync(FONT),
     figma.loadFontAsync(FONT_REGULAR),
@@ -18,32 +25,34 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
   const section = figma.createSection();
   section.name = title || 'Concept Map';
 
-  // Track concept ID -> FigJam sticky node ID
+  // Track concept ID -> FigJam node ID, and actual widths for bounds
   const nodeIdMap = new Map<string, string>();
+  const nodeWidths = new Map<string, number>();
 
-  // Create sticky notes
+  // Create text boxes (rounded rectangles)
   for (const node of nodes) {
-    const sticky = figma.createSticky();
-    sticky.x = node.x;
-    sticky.y = node.y;
+    const shape = figma.createShapeWithText();
+    shape.shapeType = 'ROUNDED_RECTANGLE';
 
-    // Color by type
-    const color = NODE_COLORS[node.type] ?? NODE_COLORS.concept;
-    sticky.fills = [{ type: 'SOLID', color }];
+    // Size based on label length
+    const width = Math.max(NODE_MIN_WIDTH, node.label.length * 9 + 32);
+    shape.resize(width, NODE_HEIGHT);
+
+    // Offset Y so nodes sit below the section title
+    shape.x = node.x;
+    shape.y = node.y + TITLE_OFFSET_Y;
+
+    // Uniform color — no type-based coloring
+    shape.fills = [{ type: 'SOLID', color: NODE_COLOR }];
 
     // Set label text
-    sticky.text.fontName = FONT;
-    sticky.text.characters = node.label;
+    shape.text.fontName = FONT;
+    shape.text.characters = node.label;
+    shape.text.fontSize = 13;
 
-    // Use wide width for longer labels
-    if (node.label.length > 16) {
-      sticky.isWideWidth = true;
-    }
-
-    sticky.authorVisible = false;
-
-    section.appendChild(sticky);
-    nodeIdMap.set(node.id, sticky.id);
+    section.appendChild(shape);
+    nodeIdMap.set(node.id, shape.id);
+    nodeWidths.set(node.id, width);
   }
 
   // Create connectors
@@ -76,13 +85,13 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
     section.appendChild(connector);
   }
 
-  // Resize section to fit all content
-  const bounds = computeBounds(nodes);
+  // Resize section to fit all content (account for title offset)
+  const bounds = computeBounds(nodes, nodeWidths);
   section.x = bounds.minX - SECTION_PADDING;
   section.y = bounds.minY - SECTION_PADDING;
   section.resizeWithoutConstraints(
     bounds.width + SECTION_PADDING * 2,
-    bounds.height + SECTION_PADDING * 2
+    bounds.height + TITLE_OFFSET_Y + SECTION_PADDING * 2
   );
 
   // Select and zoom to the created map
@@ -90,17 +99,20 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
   figma.viewport.scrollAndZoomIntoView([section]);
 }
 
-function computeBounds(nodes: (ConceptNode & { x: number; y: number })[]) {
-  const pad = 200; // sticky note approximate size
+function computeBounds(
+  nodes: (ConceptNode & { x: number; y: number })[],
+  nodeWidths: Map<string, number>
+) {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const n of nodes) {
+    const w = nodeWidths.get(n.id) || NODE_MIN_WIDTH;
     minX = Math.min(minX, n.x);
     minY = Math.min(minY, n.y);
-    maxX = Math.max(maxX, n.x + pad);
-    maxY = Math.max(maxY, n.y + pad);
+    maxX = Math.max(maxX, n.x + w);
+    maxY = Math.max(maxY, n.y + NODE_HEIGHT);
   }
   return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
 }
