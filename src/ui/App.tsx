@@ -68,6 +68,7 @@ export function App() {
 
   // Ref to hold the saved map data (avoids re-renders)
   const savedMapRef = useRef<ConceptMap | null>(null);
+  const articleTextRef = useRef<string>('');
 
   // Save map to storage whenever extraction produces a new map
   useEffect(() => {
@@ -96,6 +97,7 @@ export function App() {
 
   const handleExtract = (text: string, focusQuery: string, density: DensityLevel) => {
     setError(null);
+    articleTextRef.current = text;
     extraction.extract({ text, focusQuery: focusQuery || undefined, density });
   };
 
@@ -178,6 +180,7 @@ export function App() {
         <ReviewPanel
           conceptMap={extraction.map}
           mergeSuggestions={extraction.suggestions}
+          articleText={articleTextRef.current}
           onUpdateMap={extraction.updateMap}
           onUpdateSuggestions={extraction.updateSuggestions}
           onGenerate={handleGenerate}

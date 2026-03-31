@@ -4,10 +4,12 @@ import type {
   ConceptNode,
   MergeSuggestion,
 } from '../../shared/types';
+import { splitSentences } from '../text/sentences';
 
 interface Props {
   conceptMap: ConceptMap;
   mergeSuggestions: MergeSuggestion[];
+  articleText: string;
   onUpdateMap: (map: ConceptMap) => void;
   onUpdateSuggestions: (suggestions: MergeSuggestion[]) => void;
   onGenerate: () => void;
@@ -17,6 +19,7 @@ interface Props {
 export function ReviewPanel({
   conceptMap,
   mergeSuggestions,
+  articleText,
   onUpdateMap,
   onUpdateSuggestions,
   onGenerate,
@@ -52,6 +55,47 @@ export function ReviewPanel({
         e.label.toLowerCase().includes(searchLower)
     );
   }, [conceptMap.edges, searchLower, filteredNodeIds]);
+
+  // --- Quality metrics ---
+  const metrics = useMemo(() => {
+    if (!articleText) return null;
+
+    const articleLower = articleText.toLowerCase();
+    const sentences = splitSentences(articleText);
+
+    // Coverage: how many article sentences are referenced by at least one sourceQuote
+    const allQuotes = [
+      ...conceptMap.nodes.map((n) => n.sourceQuote).filter(Boolean),
+      ...conceptMap.edges.map((e) => e.sourceQuote).filter(Boolean),
+    ];
+    const coveredSentences = sentences.filter((sent) => {
+      const sentLower = sent.toLowerCase();
+      return allQuotes.some((q) => {
+        const qLower = q.toLowerCase();
+        // Check if the quote appears in this sentence or vice versa
+        return sentLower.includes(qLower) || qLower.includes(sentLower);
+      });
+    });
+
+    // Faithfulness: how many sourceQuotes actually appear in the article text
+    const uniqueQuotes = [...new Set(allQuotes)];
+    const verifiedQuotes = uniqueQuotes.filter((q) =>
+      articleLower.includes(q.toLowerCase())
+    );
+
+    return {
+      sentencesCovered: coveredSentences.length,
+      sentencesTotal: sentences.length,
+      coveragePct: sentences.length > 0
+        ? Math.round((coveredSentences.length / sentences.length) * 100)
+        : 0,
+      quotesVerified: verifiedQuotes.length,
+      quotesTotal: uniqueQuotes.length,
+      faithfulnessPct: uniqueQuotes.length > 0
+        ? Math.round((verifiedQuotes.length / uniqueQuotes.length) * 100)
+        : 0,
+    };
+  }, [articleText, conceptMap.nodes, conceptMap.edges]);
 
   // --- Node editing ---
   const startEdit = (node: ConceptNode) => {
@@ -133,6 +177,26 @@ export function ReviewPanel({
 
       {conceptMap.summary && (
         <p className="summary">{conceptMap.summary}</p>
+      )}
+
+      {/* Quality metrics */}
+      {metrics && (
+        <div className="metrics-bar">
+          <div className="metric">
+            <span className="metric-label">Coverage</span>
+            <span className="metric-value">{metrics.coveragePct}%</span>
+            <span className="metric-detail">
+              {metrics.sentencesCovered}/{metrics.sentencesTotal} sentences
+            </span>
+          </div>
+          <div className="metric">
+            <span className="metric-label">Faithfulness</span>
+            <span className="metric-value">{metrics.faithfulnessPct}%</span>
+            <span className="metric-detail">
+              {metrics.quotesVerified}/{metrics.quotesTotal} quotes verified
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Merge suggestions */}
