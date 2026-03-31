@@ -58,7 +58,10 @@ export function App() {
         setHasSavedMap(msg.payload !== null);
         // Store it so we can restore later
         if (msg.payload) {
-          savedMapRef.current = msg.payload;
+          savedMapRef.current = msg.payload.map;
+          if (msg.payload.articleText) {
+            articleTextRef.current = msg.payload.articleText;
+          }
         }
       }
     };
@@ -73,7 +76,10 @@ export function App() {
   // Save map to storage whenever extraction produces a new map
   useEffect(() => {
     if (extraction.map) {
-      postToPlugin({ type: 'save-map', payload: extraction.map });
+      postToPlugin({
+        type: 'save-map',
+        payload: { map: extraction.map, articleText: articleTextRef.current },
+      });
       setHasSavedMap(true);
       savedMapRef.current = extraction.map;
     }

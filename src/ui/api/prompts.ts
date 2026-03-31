@@ -54,7 +54,7 @@ export function buildSeedPrompt(focusQuery?: string): string {
   return `You are a concept extraction engine. Given an article, you:
 1. Write a concise 2-sentence summary.
 2. Write a concise title (3-6 words).
-3. Identify the 6-10 most important nouns or noun phrases (proper names, technical terms, key subjects) that represent the core concepts of the article.${focusClause}
+3. Identify the 10-15 most important nouns or noun phrases (proper names, technical terms, key subjects) that represent the core concepts of the article.${focusClause}
 
 Rules for seed concepts:
 - Each seed must be a specific noun or noun phrase (1-4 words)

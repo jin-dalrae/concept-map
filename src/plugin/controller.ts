@@ -88,8 +88,21 @@ figma.ui.onmessage = async (msg: UIToPluginMessage) => {
     }
 
     case 'load-map': {
-      const saved = (await figma.clientStorage.getAsync(STORAGE_KEY_MAP)) as ConceptMap | undefined;
-      const reply: PluginToUIMessage = { type: 'map-loaded', payload: saved ?? null };
+      const saved = (await figma.clientStorage.getAsync(STORAGE_KEY_MAP)) as
+        | { map: ConceptMap; articleText: string }
+        | ConceptMap
+        | undefined;
+      // Handle both old format (ConceptMap only) and new format (with articleText)
+      let payload: { map: ConceptMap; articleText: string } | null = null;
+      if (saved) {
+        if ('map' in saved && 'articleText' in saved) {
+          payload = saved;
+        } else if ('nodes' in saved) {
+          // Old format: just a ConceptMap
+          payload = { map: saved as ConceptMap, articleText: '' };
+        }
+      }
+      const reply: PluginToUIMessage = { type: 'map-loaded', payload };
       figma.ui.postMessage(reply);
       break;
     }

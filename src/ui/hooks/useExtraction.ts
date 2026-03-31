@@ -17,10 +17,10 @@ import { splitSentences, findSentencesForConcepts } from '../text/sentences';
 
 // Density → how many BFS expansion levels
 const DEPTH_MAP: Record<string, number> = {
-  sparse: 3,
-  standard: 5,
-  dense: 10,
-  exhaustive: 15,
+  sparse: 6,
+  standard: 10,
+  dense: 15,
+  exhaustive: 20,
 };
 
 interface ExtractionState {
@@ -107,7 +107,7 @@ export function useExtraction(settings: PluginSettings | null) {
         const explored = new Set<string>(frontier.map((f: string) => f.toLowerCase()));
 
         // Cap sentences sent to LLM per level to avoid enormous prompts
-        const MAX_SENTENCES_PER_LEVEL = 40;
+        const MAX_SENTENCES_PER_LEVEL = 100;
 
         for (let depth = 0; depth < maxDepth; depth++) {
           if (frontier.length === 0) break;

@@ -7,7 +7,7 @@ export type UIToPluginMessage =
   | { type: 'save-settings'; payload: PluginSettings }
   | { type: 'save-feedback'; payload: FeedbackPayload }
   | { type: 'resize-ui'; payload: { width: number; height: number } }
-  | { type: 'save-map'; payload: ConceptMap }
+  | { type: 'save-map'; payload: { map: ConceptMap; articleText: string } }
   | { type: 'load-map' };
 
 export interface GenerateMapPayload {
@@ -27,4 +27,4 @@ export interface FeedbackPayload {
 export type PluginToUIMessage =
   | { type: 'settings-loaded'; payload: PluginSettings | null }
   | { type: 'map-generated'; payload: { success: boolean; nodeCount: number; edgeCount: number; error?: string } }
-  | { type: 'map-loaded'; payload: ConceptMap | null };
+  | { type: 'map-loaded'; payload: { map: ConceptMap; articleText: string } | null };
