@@ -1,6 +1,6 @@
 import type { ConceptNode, ConceptEdge, LayoutConfig } from '../../shared/types';
 import type { LayoutResult } from './index';
-import { LAYOUT_DEFAULTS } from '../../shared/constants';
+import { LAYOUT_DEFAULTS, estimateNodeWidth } from '../../shared/constants';
 
 export function layoutRadial(
   nodes: ConceptNode[],
@@ -25,8 +25,8 @@ export function layoutRadial(
   const centerNode = sorted[0];
   const outerNodes = sorted.slice(1);
   const ringGap = LAYOUT_DEFAULTS.radial.ringGap;
-  const nodesPerRing = 10;
 
+  // Dynamically determine how many nodes fit per ring based on label widths
   const result: (ConceptNode & { x: number; y: number })[] = [
     { ...centerNode, x: 0, y: 0 },
   ];
@@ -35,7 +35,16 @@ export function layoutRadial(
   let idx = 0;
   while (idx < outerNodes.length) {
     const radius = ring * ringGap;
-    const count = Math.min(nodesPerRing * ring, outerNodes.length - idx);
+    // Calculate how many nodes fit on this ring based on circumference and avg label width
+    const circumference = 2 * Math.PI * radius;
+    const ringNodes = outerNodes.slice(idx);
+    const avgWidth = ringNodes.length > 0
+      ? ringNodes.slice(0, Math.min(10, ringNodes.length))
+          .reduce((sum, n) => sum + estimateNodeWidth(n.label), 0) /
+        Math.min(10, ringNodes.length)
+      : 120;
+    const maxFit = Math.max(4, Math.floor(circumference / (avgWidth + 40)));
+    const count = Math.min(maxFit, outerNodes.length - idx);
     const angleStep = (2 * Math.PI) / count;
 
     for (let i = 0; i < count && idx < outerNodes.length; i++, idx++) {

@@ -4,8 +4,6 @@
   "api": "1.0.0",
   "main": "dist/code.js",
   "ui": "dist/index.html",
-  "containsWidget": true,
-  "widgetApi": "1.0.0",
   "editorType": [
     "figjam"
   ],
@@ -15,6 +13,6 @@
       "https://api.anthropic.com",
       "https://generativelanguage.googleapis.com"
     ],
-    "reasoning": "BYOK: Users provide their own API keys. Calls Claude or Gemini APIs directly. Wildcard allows URL-fetching of user-provided article URLs."
+    "reasoning": "BYOK: Users provide their own API keys. Calls Claude or Gemini APIs directly for concept extraction."
   }
 }

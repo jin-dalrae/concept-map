@@ -1,11 +1,10 @@
 import type { ConceptNode, ConceptEdge, LayoutConfig } from '../../shared/types';
 import type { LayoutResult } from './index';
+import { LAYOUT_DEFAULTS, estimateNodeWidth } from '../../shared/constants';
 
-// Cluster-specific layout constants
-const NODE_W = 180;    // estimated node width
-const NODE_H = 56;     // node height + vertical gap
-const INTRA_GAP = 20;  // gap between nodes within a cluster
-const CLUSTER_GAP = 120; // gap between clusters
+const ROW_HEIGHT = LAYOUT_DEFAULTS.nodeHeight + 50; // vertical gap between rows
+const CLUSTER_GAP = LAYOUT_DEFAULTS.cluster.clusterGap;
+const NODE_PAD = 40; // horizontal gap between nodes within a cluster
 
 export function layoutCluster(
   nodes: ConceptNode[],
@@ -35,9 +34,14 @@ export function layoutCluster(
   for (const [, groupNodes] of clusterEntries) {
     const cols = Math.ceil(Math.sqrt(groupNodes.length));
     const rows = Math.ceil(groupNodes.length / cols);
+    // Use max node width in this cluster for uniform column spacing
+    const maxW = groupNodes.reduce(
+      (max, n) => Math.max(max, estimateNodeWidth(n.label)),
+      LAYOUT_DEFAULTS.minNodeWidth
+    );
     clusterSizes.push({
-      w: cols * (NODE_W + INTRA_GAP),
-      h: rows * (NODE_H + INTRA_GAP),
+      w: cols * (maxW + NODE_PAD),
+      h: rows * ROW_HEIGHT,
     });
   }
 
@@ -63,6 +67,12 @@ export function layoutCluster(
     let clusterY = 0;
     for (let r = 0; r < gr; r++) clusterY += rowHeights[r] + CLUSTER_GAP;
 
+    // Use max node width in this cluster for uniform columns
+    const maxW = groupNodes.reduce(
+      (max, n) => Math.max(max, estimateNodeWidth(n.label)),
+      LAYOUT_DEFAULTS.minNodeWidth
+    );
+
     // Lay out nodes in this cluster as a grid
     const cols = Math.ceil(Math.sqrt(groupNodes.length));
     for (let i = 0; i < groupNodes.length; i++) {
@@ -70,8 +80,8 @@ export function layoutCluster(
       const row = Math.floor(i / cols);
       result.push({
         ...groupNodes[i],
-        x: clusterX + col * (NODE_W + INTRA_GAP),
-        y: clusterY + row * (NODE_H + INTRA_GAP),
+        x: clusterX + col * (maxW + NODE_PAD),
+        y: clusterY + row * ROW_HEIGHT,
       });
     }
   }
