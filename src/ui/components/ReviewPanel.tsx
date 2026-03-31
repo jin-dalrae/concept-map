@@ -205,6 +205,20 @@ export function ReviewPanel({
         </div>
       )}
 
+      {/* Low coverage suggestion */}
+      {metrics && metrics.coveragePct < LOW_COVERAGE_THRESHOLD && onExpand && (
+        <div className="coverage-warning">
+          <span>Coverage is low. Extract more concepts from uncovered sentences?</span>
+          <button
+            className="btn-sm btn-expand"
+            onClick={onExpand}
+            disabled={isExpanding}
+          >
+            {isExpanding ? 'Expanding...' : 'Expand Map'}
+          </button>
+        </div>
+      )}
+
       {/* Merge suggestions */}
       {pendingSuggestions.length > 0 && (
         <div className="section">

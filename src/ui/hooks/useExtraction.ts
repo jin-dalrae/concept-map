@@ -25,6 +25,7 @@ const DEPTH_MAP: Record<string, number> = {
 
 interface ExtractionState {
   loading: boolean;
+  expanding: boolean;
   progress: string;
   map: ConceptMap | null;
   suggestions: MergeSuggestion[];
@@ -34,6 +35,7 @@ interface ExtractionState {
 export function useExtraction(settings: PluginSettings | null) {
   const [state, setState] = useState<ExtractionState>({
     loading: false,
+    expanding: false,
     progress: '',
     map: null,
     suggestions: [],
@@ -265,6 +267,136 @@ export function useExtraction(settings: PluginSettings | null) {
     [settings]
   );
 
+  const expand = useCallback(
+    async (articleText: string) => {
+      if (!settings?.apiKey || !state.map) return;
+
+      setState((s) => ({ ...s, expanding: true, progress: 'Finding uncovered content...' }));
+
+      try {
+        const client = createLLMClient(settings.provider, {
+          apiKey: settings.apiKey,
+          model: settings.model,
+        });
+
+        const sentences = splitSentences(articleText);
+        const existingQuotes = [
+          ...state.map.nodes.map((n) => n.sourceQuote?.toLowerCase()).filter(Boolean),
+          ...state.map.edges.map((e) => e.sourceQuote?.toLowerCase()).filter(Boolean),
+        ];
+
+        // Find uncovered sentences
+        const uncoveredSentences = sentences.filter((sent) => {
+          const sentLower = sent.toLowerCase();
+          return !existingQuotes.some((q) => sentLower.includes(q) || q.includes(sentLower));
+        });
+
+        if (uncoveredSentences.length === 0) {
+          setState((s) => ({ ...s, expanding: false, progress: '' }));
+          return;
+        }
+
+        console.log('[ConceptMap] Expanding with', uncoveredSentences.length, 'uncovered sentences');
+
+        // Use existing concept labels as seeds for expansion
+        const existingLabels = state.map.nodes.map((n) => n.label);
+        const sentenceContext = uncoveredSentences.slice(0, 100).map((s) => `- ${s}`).join('\n');
+
+        setState((s) => ({ ...s, progress: 'Extracting from uncovered sentences...' }));
+
+        let rels: { relationships: any[]; newConcepts: any[] };
+        try {
+          rels = await extractRelationships(client, existingLabels.slice(0, 20), sentenceContext);
+        } catch (err) {
+          console.warn('[ConceptMap] Expand extraction failed:', err);
+          setState((s) => ({ ...s, expanding: false, error: 'Failed to expand map' }));
+          return;
+        }
+
+        // Merge new relationships into existing map
+        const nodeMap = new Map<string, ConceptNode>();
+        for (const node of state.map.nodes) {
+          nodeMap.set(node.label.toLowerCase(), node);
+        }
+
+        let nodeCounter = state.map.nodes.length + 1;
+        let edgeCounter = state.map.edges.length + 1;
+        const newEdges: ConceptEdge[] = [...state.map.edges];
+
+        for (const rel of rels.relationships || []) {
+          const srcLabel = rel.source?.trim();
+          const tgtLabel = rel.target?.trim();
+          const edgeLabel = rel.label?.trim();
+          if (!srcLabel || !tgtLabel || !edgeLabel) continue;
+          if (isInvalidNodeLabel(srcLabel) || isInvalidNodeLabel(tgtLabel)) continue;
+
+          const srcKey = srcLabel.toLowerCase();
+          if (!nodeMap.has(srcKey)) {
+            nodeMap.set(srcKey, {
+              id: `n${nodeCounter++}`,
+              label: srcLabel,
+              type: validType(rel.sourceType),
+              description: '',
+              sourceQuote: rel.sentence || '',
+            });
+          }
+
+          const tgtKey = tgtLabel.toLowerCase();
+          if (!nodeMap.has(tgtKey)) {
+            nodeMap.set(tgtKey, {
+              id: `n${nodeCounter++}`,
+              label: tgtLabel,
+              type: validType(rel.targetType),
+              description: '',
+              sourceQuote: rel.sentence || '',
+            });
+          }
+
+          const srcId = nodeMap.get(srcKey)!.id;
+          const tgtId = nodeMap.get(tgtKey)!.id;
+          if (srcId !== tgtId) {
+            const edgeExists = newEdges.some(
+              (e) => e.sourceId === srcId && e.targetId === tgtId
+            );
+            if (!edgeExists) {
+              newEdges.push({
+                id: `e${edgeCounter++}`,
+                sourceId: srcId,
+                targetId: tgtId,
+                label: edgeLabel,
+                sourceQuote: rel.sentence || '',
+                weight: 0.5,
+              });
+            }
+          }
+        }
+
+        const expandedMap: ConceptMap = {
+          ...state.map,
+          nodes: Array.from(nodeMap.values()),
+          edges: newEdges,
+        };
+
+        const cleanedMap = validateAndCleanMap(expandedMap);
+        const mergedMap = autoMergeDuplicates(cleanedMap);
+
+        console.log('[ConceptMap] After expansion:', mergedMap.nodes.length, 'nodes,', mergedMap.edges.length, 'edges');
+
+        setState((s) => ({
+          ...s,
+          expanding: false,
+          progress: '',
+          map: mergedMap,
+        }));
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('[ConceptMap] Expand error:', errMsg);
+        setState((s) => ({ ...s, expanding: false, error: errMsg }));
+      }
+    },
+    [settings, state.map]
+  );
+
   const updateMap = useCallback((map: ConceptMap) => {
     setState((s) => ({ ...s, map }));
   }, []);
@@ -273,7 +405,7 @@ export function useExtraction(settings: PluginSettings | null) {
     setState((s) => ({ ...s, suggestions }));
   }, []);
 
-  return { ...state, extract, updateMap, updateSuggestions };
+  return { ...state, extract, expand, updateMap, updateSuggestions };
 }
 
 // ─── LLM call helpers ───────────────────────────

@@ -194,6 +194,8 @@ export function App() {
             extraction.updateMap(null as any);
             setScreen('input');
           }}
+          onExpand={() => extraction.expand(articleTextRef.current)}
+          isExpanding={extraction.expanding}
         />
       )}
 
