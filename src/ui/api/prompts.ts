@@ -21,7 +21,7 @@ export function buildExtractionPrompt(request: ExtractionRequest): {
 Rules:
 - Extract between ${range.min} and ${range.max} concept nodes.
 - Each node has: id (short kebab-case like "n1"), label (concise noun phrase, 1-4 words), type (one of: concept, actor, process, outcome), description (1 sentence explaining this concept in context), sourceQuote (exact quote from the article that supports this node, 5-20 words).
-- Each edge has: id (like "e1"), sourceId, targetId, label (active-voice verb phrase, 1-3 words, e.g. "enables", "contradicts", "is measured by"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance).
+- Each edge has: id (like "e1"), sourceId, targetId, label (a natural verb phrase taken from the article's own wording, e.g. "is democratically elected", "proposed using", "sought to integrate"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance). Use the document's own phrasing for edge labels — do NOT over-simplify to single generic verbs like "enables" or "causes".
 - For each node and edge, the sourceQuote MUST be an exact quote from the article. If you cannot find a supporting quote, do not include the node/edge.
 - When the same concept appears in multiple forms (plurals, pronouns, abbreviations, paraphrases), use a single canonical label. Do not create separate nodes for variants.
 - Also provide: title (concise map title, 3-6 words), summary (1-2 sentence summary).${focusClause}${exhaustiveClause}
@@ -80,7 +80,7 @@ export function buildRelationshipPrompt(): string {
 Rules:
 - Each relationship must be grounded in the given sentences
 - Source and target should be concise noun phrases (1-4 words)
-- Relationship label is an active-voice verb phrase (1-3 words), e.g. "enables", "causes", "funds", "opposes"
+- Relationship label should use the document's own verb phrasing, e.g. "is democratically elected", "proposed using", "sought to integrate". Do NOT over-simplify to generic single verbs like "causes" or "enables" — preserve the article's meaning.
 - Assign each noun a type: concept, actor, process, or outcome
 - Do NOT duplicate relationships. If the same source→target pair appears, keep the most informative verb.
 - Include ALL relationships you can find — be thorough

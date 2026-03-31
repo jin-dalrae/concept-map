@@ -2,31 +2,26 @@ import { useState, useMemo } from 'react';
 import type {
   ConceptMap,
   ConceptNode,
-  ConceptEdge,
   MergeSuggestion,
-  LayoutType,
 } from '../../shared/types';
 
 interface Props {
   conceptMap: ConceptMap;
   mergeSuggestions: MergeSuggestion[];
-  defaultLayout: LayoutType;
   onUpdateMap: (map: ConceptMap) => void;
   onUpdateSuggestions: (suggestions: MergeSuggestion[]) => void;
-  onGenerate: (layout: LayoutType) => void;
+  onGenerate: () => void;
   onBack: () => void;
 }
 
 export function ReviewPanel({
   conceptMap,
   mergeSuggestions,
-  defaultLayout,
   onUpdateMap,
   onUpdateSuggestions,
   onGenerate,
   onBack,
 }: Props) {
-  const [layout, setLayout] = useState<LayoutType>(defaultLayout);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');
   const [search, setSearch] = useState('');
@@ -268,23 +263,7 @@ export function ReviewPanel({
         </div>
       </div>
 
-      {/* Layout picker */}
-      <div className="form-group">
-        <label>Layout</label>
-        <div className="toggle-group">
-          {(['radial', 'hierarchical', 'cluster'] as LayoutType[]).map((l) => (
-            <button
-              key={l}
-              className={`toggle-btn ${layout === l ? 'active' : ''}`}
-              onClick={() => setLayout(l)}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button className="btn-primary" onClick={() => onGenerate(layout)}>
+      <button className="btn-primary" onClick={() => onGenerate()}>
         Generate Map
       </button>
     </div>

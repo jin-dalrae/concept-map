@@ -534,3 +534,10 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
+
+.app-footer {
+  text-align: center;
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+}

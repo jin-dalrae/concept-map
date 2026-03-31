@@ -1,7 +1,11 @@
 import dagre from '@dagrejs/dagre';
 import type { ConceptNode, ConceptEdge, LayoutConfig } from '../../shared/types';
 import type { LayoutResult } from './index';
-import { LAYOUT_DEFAULTS, estimateNodeWidth } from '../../shared/constants';
+import { LAYOUT_DEFAULTS } from '../../shared/constants';
+
+function nodeWidth(label: string): number {
+  return Math.max(LAYOUT_DEFAULTS.stickyWidth, label.length * 9 + 32);
+}
 
 export function layoutHierarchical(
   nodes: ConceptNode[],
@@ -16,17 +20,15 @@ export function layoutHierarchical(
   });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const h = LAYOUT_DEFAULTS.nodeHeight;
+  const h = LAYOUT_DEFAULTS.stickyHeight;
 
-  // Use dynamic width per node based on label length
-  const nodeWidths = new Map<string, number>();
   for (const node of nodes) {
-    const w = estimateNodeWidth(node.label);
-    nodeWidths.set(node.id, w);
+    const w = nodeWidth(node.label);
     g.setNode(node.id, { width: w, height: h });
   }
 
   for (const edge of edges) {
+    // Only add edge if both nodes exist
     if (g.hasNode(edge.sourceId) && g.hasNode(edge.targetId)) {
       g.setEdge(edge.sourceId, edge.targetId);
     }
@@ -37,7 +39,7 @@ export function layoutHierarchical(
   return {
     nodes: nodes.map((node) => {
       const dagreNode = g.node(node.id);
-      const w = nodeWidths.get(node.id) ?? LAYOUT_DEFAULTS.minNodeWidth;
+      const w = nodeWidth(node.label);
       return {
         ...node,
         x: (dagreNode?.x ?? 0) - w / 2,

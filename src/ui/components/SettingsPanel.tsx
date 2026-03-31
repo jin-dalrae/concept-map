@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PluginSettings, LLMProvider, DensityLevel, LayoutType } from '../../shared/types';
+import type { PluginSettings, LLMProvider, DensityLevel } from '../../shared/types';
 import { MODEL_OPTIONS, DENSITY_LABELS } from '../../shared/constants';
 
 interface Props {
@@ -15,7 +15,7 @@ export function SettingsPanel({ settings, onSave, onBack }: Props) {
   const [apiKey, setApiKey] = useState(settings?.apiKey || '');
   const [model, setModel] = useState(settings?.model || MODEL_OPTIONS.gemini[0].value);
   const [density, setDensity] = useState<DensityLevel>(settings?.density || 'standard');
-  const [layout, setLayout] = useState<LayoutType>(settings?.layout || 'radial');
+  const layout = 'hierarchical' as const;
   const [validating, setValidating] = useState(false);
   const [valid, setValid] = useState<boolean | null>(null);
 
@@ -121,21 +121,6 @@ export function SettingsPanel({ settings, onSave, onBack }: Props) {
               onClick={() => setDensity(d)}
             >
               {DENSITY_LABELS[d]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Default Layout</label>
-        <div className="toggle-group">
-          {(['radial', 'hierarchical', 'cluster'] as LayoutType[]).map((l) => (
-            <button
-              key={l}
-              className={`toggle-btn ${layout === l ? 'active' : ''}`}
-              onClick={() => setLayout(l)}
-            >
-              {l}
             </button>
           ))}
         </div>

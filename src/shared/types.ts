@@ -41,7 +41,7 @@ export interface MergeSuggestion {
 }
 
 // --- Layout ---
-export type LayoutType = 'radial' | 'hierarchical' | 'cluster';
+export type LayoutType = 'hierarchical';
 export type DensityLevel = 'sparse' | 'standard' | 'dense' | 'exhaustive';
 
 export interface LayoutConfig {

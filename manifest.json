@@ -1,5 +1,5 @@
 {
-  "name": "ConceptMap",
+  "name": "Reading Concept Map Creator",
   "id": "concept-map-figjam-plugin",
   "api": "1.0.0",
   "main": "dist/code.js",
@@ -13,6 +13,6 @@
       "https://api.anthropic.com",
       "https://generativelanguage.googleapis.com"
     ],
-    "reasoning": "BYOK: Users provide their own API keys. Calls Claude or Gemini APIs directly for concept extraction."
+    "reasoning": "BYOK: Users provide their own API keys. Calls Claude or Gemini APIs directly. Wildcard allows URL-fetching of user-provided article URLs."
   }
 }

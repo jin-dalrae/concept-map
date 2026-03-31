@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ConceptMap, LayoutType, DensityLevel } from '../shared/types';
+import type { ConceptMap, DensityLevel } from '../shared/types';
 import type { PluginToUIMessage, UIToPluginMessage } from '../shared/messages';
 import { useSettings } from './hooks/useSettings';
 import { useExtraction } from './hooks/useExtraction';
@@ -107,15 +107,13 @@ export function App() {
     }
   };
 
-  const handleGenerate = (layout: LayoutType) => {
+  const handleGenerate = () => {
     if (!extraction.map) return;
 
-    // Apply accepted merges are already handled in ReviewPanel
     const { nodes, edges } = extraction.map;
 
-    // Compute layout coordinates
     const result = computeLayout(nodes, edges, {
-      type: layout,
+      type: 'hierarchical',
       nodeSpacing: 100,
       rankSpacing: 160,
     });
@@ -126,7 +124,7 @@ export function App() {
       payload: {
         nodes: result.nodes,
         edges,
-        layout,
+        layout: 'hierarchical',
         title: extraction.map.title,
       },
     });
@@ -180,7 +178,6 @@ export function App() {
         <ReviewPanel
           conceptMap={extraction.map}
           mergeSuggestions={extraction.suggestions}
-          defaultLayout={settings?.layout ?? 'radial'}
           onUpdateMap={extraction.updateMap}
           onUpdateSuggestions={extraction.updateSuggestions}
           onGenerate={handleGenerate}
@@ -202,6 +199,8 @@ export function App() {
           onRearrange={() => setScreen('review')}
         />
       )}
+
+      <footer className="app-footer">by Rae J.</footer>
     </div>
   );
 }

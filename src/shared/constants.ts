@@ -40,23 +40,12 @@ export const DENSITY_DESCRIPTIONS: Record<DensityLevel, string> = {
   exhaustive: '15 levels',
 };
 
-// Layout spacing defaults (in pixels, matching text node dimensions)
+// Layout spacing defaults (in pixels, matching text box dimensions)
 export const LAYOUT_DEFAULTS = {
-  nodeHeight: 32,
-  charWidth: 9,         // approximate px per character at 16px Inter Medium
-  minNodeWidth: 60,     // minimum node width for short labels
-  hierarchical: { rankSep: 120, nodeSep: 40 },
-  radial: { ringGap: 220 },
-  cluster: { clusterGap: 200, intraClusterGap: 30 },
+  stickyWidth: 160,
+  stickyHeight: 48,
+  hierarchical: { rankSep: 160, nodeSep: 100 },
 };
-
-// Estimate the pixel width of a text node based on label length
-export function estimateNodeWidth(label: string): number {
-  return Math.max(
-    LAYOUT_DEFAULTS.minNodeWidth,
-    label.length * LAYOUT_DEFAULTS.charWidth + 16 // 16px padding
-  );
-}
 
 export const SECTION_PADDING = 100;
 
