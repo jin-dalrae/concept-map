@@ -14,7 +14,11 @@ interface Props {
   onUpdateSuggestions: (suggestions: MergeSuggestion[]) => void;
   onGenerate: () => void;
   onBack: () => void;
+  onExpand?: () => void;
+  isExpanding?: boolean;
 }
+
+const LOW_COVERAGE_THRESHOLD = 50;
 
 export function ReviewPanel({
   conceptMap,
@@ -24,6 +28,8 @@ export function ReviewPanel({
   onUpdateSuggestions,
   onGenerate,
   onBack,
+  onExpand,
+  isExpanding,
 }: Props) {
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState('');

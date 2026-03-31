@@ -20,10 +20,12 @@ export function buildExtractionPrompt(request: ExtractionRequest): {
 
 Rules:
 - Extract between ${range.min} and ${range.max} concept nodes.
-- Each node has: id (short kebab-case like "n1"), label (concise noun phrase, 1-4 words), type (one of: concept, actor, process, outcome), description (1 sentence explaining this concept in context), sourceQuote (exact quote from the article that supports this node, 5-20 words).
-- Each edge has: id (like "e1"), sourceId, targetId, label (a natural verb phrase taken from the article's own wording, e.g. "is democratically elected", "proposed using", "sought to integrate"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance). Use the document's own phrasing for edge labels — do NOT over-simplify to single generic verbs like "enables" or "causes".
+- Use EXACT wording from the article for all labels. Do NOT paraphrase, abbreviate, or summarize.
+- Each node has: id (short kebab-case like "n1"), label (noun phrase EXACTLY as it appears in the article), type (one of: concept, actor, process, outcome), description (1 sentence explaining this concept in context), sourceQuote (exact quote from the article that supports this node, 5-20 words).
+- Each edge has: id (like "e1"), sourceId, targetId, label (the EXACT verb phrase from the article, e.g. "is democratically elected", "proposed using", "sought to integrate"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance). Do NOT simplify or abbreviate verbs.
+- NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.) as node labels.
 - For each node and edge, the sourceQuote MUST be an exact quote from the article. If you cannot find a supporting quote, do not include the node/edge.
-- When the same concept appears in multiple forms (plurals, pronouns, abbreviations, paraphrases), use a single canonical label. Do not create separate nodes for variants.
+- When the same concept appears in multiple forms, use the most complete/specific form from the article.
 - Also provide: title (concise map title, 3-6 words), summary (1-2 sentence summary).${focusClause}${exhaustiveClause}
 
 Output ONLY valid JSON matching this exact schema (no markdown fences, no extra text):
@@ -57,10 +59,11 @@ export function buildSeedPrompt(focusQuery?: string): string {
 3. Identify the 10-15 most important nouns or noun phrases (proper names, technical terms, key subjects) that represent the core concepts of the article.${focusClause}
 
 Rules for seed concepts:
-- Each seed must be a specific noun or noun phrase (1-4 words)
-- Use canonical singular form (e.g. "policy" not "policies")
+- Use EXACT wording from the article. Do NOT paraphrase, abbreviate, or summarize.
+- Each seed must be a specific noun or noun phrase as it appears in the text
 - Include proper names, organizations, and key actors
 - Include core processes and outcomes mentioned
+- NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.)
 - Assign each seed a type: concept, actor, process, or outcome
 
 Output ONLY valid JSON (no markdown fences, no extra text):
@@ -79,12 +82,14 @@ export function buildRelationshipPrompt(): string {
 
 Rules:
 - Each relationship must be grounded in the given sentences
-- Source and target should be concise noun phrases (1-4 words)
-- Relationship label should use the document's own verb phrasing, e.g. "is democratically elected", "proposed using", "sought to integrate". Do NOT over-simplify to generic single verbs like "causes" or "enables" — preserve the article's meaning.
+- Use EXACT wording from the sentences for both nouns and verbs. Do NOT paraphrase, abbreviate, or summarize.
+- Source and target must be noun phrases EXACTLY as they appear in the sentence
+- Relationship label must use the EXACT verb phrase from the sentence (e.g. "is democratically elected", "proposed using", "sought to integrate"). Do NOT simplify or abbreviate verbs.
+- NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.) as source or target
 - Assign each noun a type: concept, actor, process, or outcome
 - Do NOT duplicate relationships. If the same source→target pair appears, keep the most informative verb.
 - Include ALL relationships you can find — be thorough
-- The "newConcepts" array lists important nouns found in these sentences that were NOT in the focus concepts list.
+- The "newConcepts" array lists important nouns found in these sentences that were NOT in the focus concepts list. Use EXACT wording.
 
 Output ONLY valid JSON (no markdown fences, no extra text):
 {

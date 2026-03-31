@@ -316,7 +316,7 @@ ${sentenceContext}`;
 function buildSentenceContext(
   concepts: string[],
   conceptSentences: Map<string, string[]>,
-  maxSentences: number = 40
+  maxSentences: number = 100
 ): string {
   const seen = new Set<string>();
   const lines: string[] = [];
@@ -370,9 +370,38 @@ function validateAndCleanMap(map: ConceptMap): ConceptMap {
   return { ...map, nodes: finalNodes, edges };
 }
 
+// Words that should never become concept nodes
+const INVALID_NODE_WORDS = new Set([
+  'it', 'this', 'that', 'these', 'those', 'which', 'what', 'who', 'whom',
+  'few', 'many', 'some', 'any', 'all', 'most', 'none', 'both', 'each',
+  'other', 'others', 'another', 'such', 'same', 'different',
+  'he', 'she', 'they', 'we', 'you', 'i', 'me', 'him', 'her', 'us', 'them',
+  'his', 'hers', 'its', 'their', 'our', 'your', 'my',
+  'here', 'there', 'where', 'when', 'how', 'why',
+  'something', 'anything', 'nothing', 'everything',
+  'someone', 'anyone', 'no one', 'everyone',
+]);
+
+function isInvalidNodeLabel(label: string): boolean {
+  const normalized = label.toLowerCase().trim();
+  if (INVALID_NODE_WORDS.has(normalized)) return true;
+  // Also reject very short labels (likely abbreviations or pronouns)
+  if (normalized.length <= 2) return true;
+  return false;
+}
+
 function autoMergeDuplicates(map: ConceptMap): ConceptMap {
+  // First filter out invalid nodes (pronouns, determiners, etc.)
+  const validNodes = map.nodes.filter((n) => !isInvalidNodeLabel(n.label));
+  const removedIds = new Set(map.nodes.filter((n) => isInvalidNodeLabel(n.label)).map((n) => n.id));
+
+  // Remove edges connected to invalid nodes
+  const validEdges = map.edges.filter(
+    (e) => !removedIds.has(e.sourceId) && !removedIds.has(e.targetId)
+  );
+
   const lemmaGroups = new Map<string, ConceptNode[]>();
-  for (const node of map.nodes) {
+  for (const node of validNodes) {
     const lemma = normalizeLemma(node.label);
     const group = lemmaGroups.get(lemma) || [];
     group.push(node);
@@ -384,7 +413,8 @@ function autoMergeDuplicates(map: ConceptMap): ConceptMap {
 
   for (const group of lemmaGroups.values()) {
     if (group.length <= 1) continue;
-    const sorted = [...group].sort((a, b) => a.label.length - b.label.length);
+    // Keep the LONGEST label (original phrasing) instead of shortest (summarized)
+    const sorted = [...group].sort((a, b) => b.label.length - a.label.length);
     const keep = sorted[0];
     for (let i = 1; i < sorted.length; i++) {
       mergeMap.set(sorted[i].id, keep.id);
@@ -392,10 +422,12 @@ function autoMergeDuplicates(map: ConceptMap): ConceptMap {
     }
   }
 
-  if (removeIds.size === 0) return map;
+  if (removeIds.size === 0 && removedIds.size === 0) {
+    return { ...map, nodes: validNodes, edges: validEdges };
+  }
 
-  const nodes = map.nodes.filter((n) => !removeIds.has(n.id));
-  const edges = map.edges
+  const nodes = validNodes.filter((n) => !removeIds.has(n.id));
+  const edges = validEdges
     .map((e) => ({
       ...e,
       sourceId: mergeMap.get(e.sourceId) || e.sourceId,
