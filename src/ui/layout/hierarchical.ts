@@ -2,10 +2,7 @@ import dagre from '@dagrejs/dagre';
 import type { ConceptNode, ConceptEdge, LayoutConfig } from '../../shared/types';
 import type { LayoutResult } from './index';
 import { LAYOUT_DEFAULTS } from '../../shared/constants';
-
-function nodeWidth(label: string): number {
-  return Math.max(LAYOUT_DEFAULTS.stickyWidth, label.length * 9 + 32);
-}
+import { computeNodeSize } from '../../shared/nodeSize';
 
 export function layoutHierarchical(
   nodes: ConceptNode[],
@@ -20,11 +17,9 @@ export function layoutHierarchical(
   });
   g.setDefaultEdgeLabel(() => ({}));
 
-  const h = LAYOUT_DEFAULTS.stickyHeight;
-
   for (const node of nodes) {
-    const w = nodeWidth(node.label);
-    g.setNode(node.id, { width: w, height: h });
+    const { width, height } = computeNodeSize(node.label);
+    g.setNode(node.id, { width, height });
   }
 
   for (const edge of edges) {
@@ -39,11 +34,11 @@ export function layoutHierarchical(
   return {
     nodes: nodes.map((node) => {
       const dagreNode = g.node(node.id);
-      const w = nodeWidth(node.label);
+      const { width, height } = computeNodeSize(node.label);
       return {
         ...node,
-        x: (dagreNode?.x ?? 0) - w / 2,
-        y: (dagreNode?.y ?? 0) - h / 2,
+        x: (dagreNode?.x ?? 0) - width / 2,
+        y: (dagreNode?.y ?? 0) - height / 2,
       };
     }),
   };

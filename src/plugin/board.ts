@@ -1,6 +1,7 @@
 import type { GenerateMapPayload } from '../shared/messages';
 import type { ConceptNode } from '../shared/types';
 import { SECTION_PADDING } from '../shared/constants';
+import { computeNodeSize, wrapLabel } from '../shared/nodeSize';
 
 // Single neutral color for all nodes (light blue-gray)
 const NODE_COLOR = { r: 0.93, g: 0.95, b: 0.98 };
@@ -8,8 +9,6 @@ const NODE_COLOR = { r: 0.93, g: 0.95, b: 0.98 };
 const FONT: FontName = { family: 'Inter', style: 'Medium' };
 const FONT_REGULAR: FontName = { family: 'Inter', style: 'Regular' };
 
-const NODE_MIN_WIDTH = 160;
-const NODE_HEIGHT = 48;
 const TITLE_OFFSET_Y = 80; // space below section title so nodes don't overlap it
 
 export async function createMapOnBoard(payload: GenerateMapPayload): Promise<void> {
@@ -25,18 +24,20 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
   const section = figma.createSection();
   section.name = title || 'Concept Map';
 
-  // Track concept ID -> FigJam node ID, and actual widths for bounds
+  // Track concept ID -> FigJam node ID, and actual dimensions for bounds
   const nodeIdMap = new Map<string, string>();
   const nodeWidths = new Map<string, number>();
+  const nodeHeights = new Map<string, number>();
 
   // Create text boxes (rounded rectangles)
   for (const node of nodes) {
     const shape = figma.createShapeWithText();
     shape.shapeType = 'ROUNDED_RECTANGLE';
 
-    // Size based on label length
-    const width = Math.max(NODE_MIN_WIDTH, node.label.length * 9 + 32);
-    shape.resize(width, NODE_HEIGHT);
+    // Size with text wrapping for long labels
+    const { width, height } = computeNodeSize(node.label);
+    const wrappedText = wrapLabel(node.label).join('\n');
+    shape.resize(width, height);
 
     // Offset Y so nodes sit below the section title
     shape.x = node.x;
@@ -45,14 +46,14 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
     // Uniform color — no type-based coloring
     shape.fills = [{ type: 'SOLID', color: NODE_COLOR }];
 
-    // Set label text
+    // Set label text (wrapped with newlines)
     shape.text.fontName = FONT;
-    shape.text.characters = node.label;
+    shape.text.characters = wrappedText;
     shape.text.fontSize = 13;
-
     section.appendChild(shape);
     nodeIdMap.set(node.id, shape.id);
     nodeWidths.set(node.id, width);
+    nodeHeights.set(node.id, height);
   }
 
   // Create connectors
@@ -86,7 +87,7 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
   }
 
   // Resize section to fit all content (account for title offset)
-  const bounds = computeBounds(nodes, nodeWidths);
+  const bounds = computeBounds(nodes, nodeWidths, nodeHeights);
   section.x = bounds.minX - SECTION_PADDING;
   section.y = bounds.minY - SECTION_PADDING;
   section.resizeWithoutConstraints(
@@ -101,18 +102,20 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
 
 function computeBounds(
   nodes: (ConceptNode & { x: number; y: number })[],
-  nodeWidths: Map<string, number>
+  nodeWidths: Map<string, number>,
+  nodeHeights: Map<string, number>
 ) {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const n of nodes) {
-    const w = nodeWidths.get(n.id) || NODE_MIN_WIDTH;
+    const w = nodeWidths.get(n.id) || 160;
+    const h = nodeHeights.get(n.id) || 46;
     minX = Math.min(minX, n.x);
     minY = Math.min(minY, n.y);
     maxX = Math.max(maxX, n.x + w);
-    maxY = Math.max(maxY, n.y + NODE_HEIGHT);
+    maxY = Math.max(maxY, n.y + h);
   }
   return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
 }
