@@ -20,9 +20,9 @@ export function buildExtractionPrompt(request: ExtractionRequest): {
 
 Rules:
 - Extract between ${range.min} and ${range.max} concept nodes.
-- Use EXACT wording from the article for all labels. Do NOT paraphrase, abbreviate, or summarize.
-- Each node has: id (short kebab-case like "n1"), label (noun phrase EXACTLY as it appears in the article), type (one of: concept, actor, process, outcome), description (1 sentence explaining this concept in context), sourceQuote (exact quote from the article that supports this node, 5-20 words).
-- Each edge has: id (like "e1"), sourceId, targetId, label (the EXACT verb phrase from the article, e.g. "is democratically elected", "proposed using", "sought to integrate"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance). Do NOT simplify or abbreviate verbs.
+- Use wording from the article. Minor simplifications (e.g. removing "which is") are okay, but do NOT abbreviate or summarize.
+- Each node has: id (short kebab-case like "n1"), label (noun phrase based on the article), type (one of: concept, actor, process, outcome), description (1 sentence explaining this concept in context), sourceQuote (exact quote from the article that supports this node, 5-20 words).
+- Each edge has: id (like "e1"), sourceId, targetId, label (verb phrase from the article, e.g. "is democratically elected", "proposed using", "sought to integrate"), sourceQuote (exact quote supporting this relationship), weight (0.0-1.0 importance). Do NOT simplify to generic verbs like "causes" or "enables".
 - NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.) as node labels.
 - For each node and edge, the sourceQuote MUST be an exact quote from the article. If you cannot find a supporting quote, do not include the node/edge.
 - When the same concept appears in multiple forms, use the most complete/specific form from the article.
@@ -59,8 +59,8 @@ export function buildSeedPrompt(focusQuery?: string): string {
 3. Identify the 10-15 most important nouns or noun phrases (proper names, technical terms, key subjects) that represent the core concepts of the article.${focusClause}
 
 Rules for seed concepts:
-- Use EXACT wording from the article. Do NOT paraphrase, abbreviate, or summarize.
-- Each seed must be a specific noun or noun phrase as it appears in the text
+- Use wording from the article. Minor simplifications (e.g. removing "which is") are okay, but do NOT abbreviate or summarize.
+- Each seed must be a specific noun or noun phrase based on the text
 - Include proper names, organizations, and key actors
 - Include core processes and outcomes mentioned
 - NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.)
@@ -82,9 +82,9 @@ export function buildRelationshipPrompt(): string {
 
 Rules:
 - Each relationship must be grounded in the given sentences
-- Use EXACT wording from the sentences for both nouns and verbs. Do NOT paraphrase, abbreviate, or summarize.
-- Source and target must be noun phrases EXACTLY as they appear in the sentence
-- Relationship label must use the EXACT verb phrase from the sentence (e.g. "is democratically elected", "proposed using", "sought to integrate"). Do NOT simplify or abbreviate verbs.
+- Use wording from the sentences. Minor simplifications (e.g. removing "which is") are okay, but do NOT abbreviate or summarize.
+- Source and target should be noun phrases based on the sentence
+- Relationship label should preserve the verb phrase from the sentence (e.g. "is democratically elected", "proposed using", "sought to integrate"). Do NOT simplify to generic verbs like "causes" or "enables".
 - NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.) as source or target
 - Assign each noun a type: concept, actor, process, or outcome
 - Do NOT duplicate relationships. If the same source→target pair appears, keep the most informative verb.
