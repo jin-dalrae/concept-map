@@ -3,12 +3,12 @@
  * and the board renderer (plugin thread). Keeps dimensions in sync.
  */
 
-const CHAR_WIDTH = 8;       // approximate width per character at font-size 13
-const NODE_PADDING = 32;    // horizontal padding inside shape
-const LINE_HEIGHT = 18;     // height per line of text
-const VERTICAL_PADDING = 28; // top + bottom padding inside shape
-const MIN_WIDTH = 140;
-const MAX_WIDTH = 200;
+const CHAR_WIDTH = 7;       // approximate width per character at font-size 12
+const NODE_PADDING = 24;    // horizontal padding inside shape
+const LINE_HEIGHT = 16;     // height per line of text
+const VERTICAL_PADDING = 20; // top + bottom padding inside shape
+const MIN_WIDTH = 100;
+const MAX_WIDTH = 160;
 
 /**
  * Wrap a label into lines that fit within MAX_WIDTH.

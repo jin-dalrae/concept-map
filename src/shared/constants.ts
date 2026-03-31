@@ -10,10 +10,10 @@ export const NODE_COLORS: Record<ConceptNodeType, { r: number; g: number; b: num
 
 // BFS expansion depth per density level
 export const DENSITY_DEPTH: Record<DensityLevel, number> = {
-  sparse: 3,
-  standard: 5,
-  dense: 10,
-  exhaustive: 15,
+  sparse: 6,
+  standard: 10,
+  dense: 15,
+  exhaustive: 20,
 };
 
 // Legacy: still used by the old single-shot extraction prompt (kept for compatibility)
@@ -34,17 +34,17 @@ export const DENSITY_LABELS: Record<DensityLevel, string> = {
 
 // Subtitle descriptions for each density level
 export const DENSITY_DESCRIPTIONS: Record<DensityLevel, string> = {
-  sparse: '3 levels',
-  standard: '5 levels',
-  dense: '10 levels',
-  exhaustive: '15 levels',
+  sparse: '6 levels',
+  standard: '10 levels',
+  dense: '15 levels',
+  exhaustive: '20 levels',
 };
 
-// Layout spacing defaults (in pixels, matching text box dimensions)
+// Layout spacing defaults (in pixels, optimized for ledger size 17"x11")
 export const LAYOUT_DEFAULTS = {
-  stickyWidth: 160,
-  stickyHeight: 48,
-  hierarchical: { rankSep: 160, nodeSep: 100 },
+  stickyWidth: 140,
+  stickyHeight: 40,
+  hierarchical: { rankSep: 70, nodeSep: 40 },
 };
 
 export const SECTION_PADDING = 100;

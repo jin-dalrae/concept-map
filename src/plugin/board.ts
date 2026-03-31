@@ -49,7 +49,7 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
     // Set label text (wrapped with newlines)
     shape.text.fontName = FONT;
     shape.text.characters = wrappedText;
-    shape.text.fontSize = 13;
+    shape.text.fontSize = 12;
     section.appendChild(shape);
     nodeIdMap.set(node.id, shape.id);
     nodeWidths.set(node.id, width);
