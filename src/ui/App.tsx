@@ -200,7 +200,7 @@ export function App() {
         />
       )}
 
-      <footer className="app-footer">by Rae J.</footer>
+      <footer className="app-footer">by Rae J. of CCA MDes IxD, for the Systems Class of Hugh Dubberly</footer>
     </div>
   );
 }

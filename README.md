@@ -14,7 +14,7 @@
 
 A FigJam plugin that turns articles, research papers, and long-form text into structured concept maps — directly on your board. Powered by your own AI API key (Claude or Gemini).
 
-by Rae J.
+Made by Rae J. of CCA MDes IxD, for the Systems Class of Hugh Dubberly.
 
 ## How It Works
 
