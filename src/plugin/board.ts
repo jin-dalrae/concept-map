@@ -1,7 +1,7 @@
 import type { GenerateMapPayload } from '../shared/messages';
 import type { ConceptNode } from '../shared/types';
 import { SECTION_PADDING } from '../shared/constants';
-import { computeNodeSize, wrapLabel } from '../shared/nodeSize';
+import { computeNodeSize } from '../shared/nodeSize';
 
 // Single neutral color for all nodes (light blue-gray)
 const NODE_COLOR = { r: 0.93, g: 0.95, b: 0.98 };
@@ -34,9 +34,8 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
     const shape = figma.createShapeWithText();
     shape.shapeType = 'ROUNDED_RECTANGLE';
 
-    // Size with text wrapping for long labels
+    // Size to fit text on single line
     const { width, height } = computeNodeSize(node.label);
-    const wrappedText = wrapLabel(node.label).join('\n');
     shape.resize(width, height);
 
     // Offset Y so nodes sit below the section title
@@ -46,9 +45,9 @@ export async function createMapOnBoard(payload: GenerateMapPayload): Promise<voi
     // Uniform color — no type-based coloring
     shape.fills = [{ type: 'SOLID', color: NODE_COLOR }];
 
-    // Set label text (wrapped with newlines)
+    // Set label text (single line, no wrapping)
     shape.text.fontName = FONT;
-    shape.text.characters = wrappedText;
+    shape.text.characters = node.label;
     shape.text.fontSize = 12;
     section.appendChild(shape);
     nodeIdMap.set(node.id, shape.id);
