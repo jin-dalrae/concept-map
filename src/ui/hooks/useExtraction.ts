@@ -219,6 +219,112 @@ export function useExtraction(settings: PluginSettings | null) {
           console.log(`[ConceptMap] Level ${depth + 1}: ${rels.relationships?.length || 0} relationships, ${frontier.length} new concepts for next level`);
         }
 
+        // ═══════════════════════════════════════════
+        // AUTO-EXPAND: Keep extracting from uncovered sentences until coverage >= 50%
+        // ═══════════════════════════════════════════
+        const MIN_COVERAGE = 50;
+        const MAX_EXPAND_ROUNDS = 3;
+
+        for (let expandRound = 0; expandRound < MAX_EXPAND_ROUNDS; expandRound++) {
+          // Calculate current coverage
+          const allQuotes = [
+            ...Array.from(nodeMap.values()).map((n) => n.sourceQuote?.toLowerCase()).filter(Boolean),
+            ...edges.map((e) => e.sourceQuote?.toLowerCase()).filter(Boolean),
+          ];
+          const coveredSentences = sentences.filter((sent) => {
+            const sentLower = sent.toLowerCase();
+            return allQuotes.some((q) => sentLower.includes(q) || q.includes(sentLower));
+          });
+          const coveragePct = Math.round((coveredSentences.length / sentences.length) * 100);
+
+          console.log(`[ConceptMap] Coverage check: ${coveragePct}% (${coveredSentences.length}/${sentences.length})`);
+
+          if (coveragePct >= MIN_COVERAGE) {
+            console.log('[ConceptMap] Coverage sufficient, stopping auto-expand');
+            break;
+          }
+
+          // Find uncovered sentences
+          const uncoveredSentences = sentences.filter((sent) => {
+            const sentLower = sent.toLowerCase();
+            return !allQuotes.some((q) => sentLower.includes(q) || q.includes(sentLower));
+          });
+
+          if (uncoveredSentences.length === 0) break;
+
+          setState((s) => ({
+            ...s,
+            progress: `Expanding coverage (round ${expandRound + 1})... ${coveragePct}% covered`,
+          }));
+
+          const existingLabels = Array.from(nodeMap.values()).map((n) => n.label);
+          const sentenceContext = uncoveredSentences.slice(0, 100).map((s) => `- ${s}`).join('\n');
+
+          let expandRels: { relationships: any[]; newConcepts: any[] };
+          try {
+            expandRels = await extractRelationships(client, existingLabels.slice(0, 20), sentenceContext);
+          } catch (err) {
+            console.warn('[ConceptMap] Auto-expand round failed, continuing:', err);
+            break;
+          }
+
+          let addedNew = false;
+          for (const rel of expandRels.relationships || []) {
+            const srcLabel = rel.source?.trim();
+            const tgtLabel = rel.target?.trim();
+            const edgeLabel = rel.label?.trim();
+            if (!srcLabel || !tgtLabel || !edgeLabel) continue;
+
+            const srcKey = srcLabel.toLowerCase();
+            if (!nodeMap.has(srcKey)) {
+              nodeMap.set(srcKey, {
+                id: `n${nodeCounter++}`,
+                label: srcLabel,
+                type: validType(rel.sourceType),
+                description: '',
+                sourceQuote: rel.sentence || '',
+              });
+              addedNew = true;
+            }
+
+            const tgtKey = tgtLabel.toLowerCase();
+            if (!nodeMap.has(tgtKey)) {
+              nodeMap.set(tgtKey, {
+                id: `n${nodeCounter++}`,
+                label: tgtLabel,
+                type: validType(rel.targetType),
+                description: '',
+                sourceQuote: rel.sentence || '',
+              });
+              addedNew = true;
+            }
+
+            const srcId = nodeMap.get(srcKey)!.id;
+            const tgtId = nodeMap.get(tgtKey)!.id;
+            if (srcId !== tgtId) {
+              const edgeExists = edges.some(
+                (e) => e.sourceId === srcId && e.targetId === tgtId
+              );
+              if (!edgeExists) {
+                edges.push({
+                  id: `e${edgeCounter++}`,
+                  sourceId: srcId,
+                  targetId: tgtId,
+                  label: edgeLabel,
+                  sourceQuote: rel.sentence || '',
+                  weight: 0.5,
+                });
+                addedNew = true;
+              }
+            }
+          }
+
+          if (!addedNew) {
+            console.log('[ConceptMap] No new content added, stopping auto-expand');
+            break;
+          }
+        }
+
         // Build final ConceptMap
         const rawMap: ConceptMap = {
           title: seedResult.title || 'Concept Map',
