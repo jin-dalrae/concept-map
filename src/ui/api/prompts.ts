@@ -85,13 +85,31 @@ Rules:
 - Use wording from the sentences. Minor simplifications (e.g. removing "which is") are okay, but do NOT abbreviate or summarize.
 - Source and target should be noun phrases based on the sentence
 - Relationship label should preserve the verb phrase from the sentence (e.g. "is democratically elected", "proposed using", "sought to integrate"). Do NOT simplify to generic verbs like "causes" or "enables".
+- Prefer active over passive voice for relationships if both are possible, but stay true to the text.
 - NEVER use pronouns (it, this, that, they, etc.) or vague terms (few, many, some, etc.) as source or target
 - Assign each noun a type: concept, actor, process, or outcome
 - Do NOT duplicate relationships. If the same source→target pair appears, keep the most informative verb.
 - Include ALL relationships you can find — be thorough
 - The "newConcepts" array lists important nouns found in these sentences that were NOT in the focus concepts list. Use EXACT wording.
 
-Output ONLY valid JSON (no markdown fences, no extra text):
+Example Output Format:
+\`\`\`json
+{
+  "relationships": [
+    {
+      "source": "Federal Reserve",
+      "target": "interest rates",
+      "label": "decided to aggressively raise",
+      "sourceType": "actor",
+      "targetType": "concept",
+      "sentence": "In an effort to combat inflation, the Federal Reserve decided to aggressively raise interest rates."
+    }
+  ],
+  "newConcepts": [{ "label": "inflation", "type": "concept" }]
+}
+\`\`\`
+
+Output ONLY valid JSON (no markdown fences around the final output, no extra text):
 {
   "relationships": [
     {

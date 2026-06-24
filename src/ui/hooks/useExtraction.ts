@@ -49,13 +49,14 @@ export function useExtraction(settings: PluginSettings | null) {
         return;
       }
 
-      setState({
+      setState((s) => ({
+        ...s,
         loading: true,
         progress: 'Analyzing article...',
         map: null,
         suggestions: [],
         error: null,
-      });
+      }));
 
       try {
         const client = createLLMClient(settings.provider, {
@@ -350,24 +351,26 @@ export function useExtraction(settings: PluginSettings | null) {
           console.warn('Dedup pipeline failed, continuing without:', err);
         }
 
-        setState({
+        setState((s) => ({
+          ...s,
           loading: false,
           progress: '',
           map: mergedMap,
           suggestions,
           error: null,
-        });
+        }));
       } catch (err) {
         // If we managed to extract some nodes before failing, return a partial map
         const errMsg = err instanceof Error ? err.message : String(err);
         console.error('[ConceptMap] Extraction error:', errMsg);
-        setState({
+        setState((s) => ({
+          ...s,
           loading: false,
           progress: '',
           map: null,
           suggestions: [],
           error: errMsg,
-        });
+        }));
       }
     },
     [settings]
@@ -556,22 +559,38 @@ function buildSentenceContext(
   conceptSentences: Map<string, string[]>,
   maxSentences: number = 100
 ): string {
-  const seen = new Set<string>();
-  const lines: string[] = [];
+  // Map each unique sentence to the set of concepts it contains
+  const sentenceToConcepts = new Map<string, Set<string>>();
 
   for (const concept of concepts) {
     const sents = conceptSentences.get(concept) || [];
     for (const s of sents) {
-      if (!seen.has(s)) {
-        seen.add(s);
-        lines.push(`- ${s}`);
-        if (lines.length >= maxSentences) break;
+      if (!sentenceToConcepts.has(s)) {
+        sentenceToConcepts.set(s, new Set<string>());
       }
+      sentenceToConcepts.get(s)!.add(concept);
     }
-    if (lines.length >= maxSentences) break;
   }
 
-  return lines.join('\n');
+  // Score sentences based on how many concepts they contain (density)
+  // Higher density sentences are more likely to contain relationships between concepts
+  const scoredSentences = Array.from(sentenceToConcepts.entries()).map(([sentence, conceptsSet]) => ({
+    sentence,
+    score: conceptsSet.size
+  }));
+
+  // Sort descending by score, then by length (longer sentences might have more context)
+  scoredSentences.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    return b.sentence.length - a.sentence.length;
+  });
+
+  // Take up to maxSentences
+  const topSentences = scoredSentences.slice(0, maxSentences);
+
+  return topSentences.map(item => `- ${item.sentence}`).join('\n');
 }
 
 function validType(type: any): ConceptNodeType {
